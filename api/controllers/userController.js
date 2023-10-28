@@ -1,7 +1,6 @@
 const User = require("../models/userModel");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken")
-
+const jwt = require("jsonwebtoken");
 
 const testApi = (req, res) => {
   res.json("Ok its working");
@@ -10,35 +9,42 @@ const testApi = (req, res) => {
 
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
-  console.log(email, password)
+  console.log(email, password);
 
   if (!email || !password) {
-    res.status(400)
-    throw new Error("All fields are mandatory")
+    res.status(400);
+    throw new Error("All fields are mandatory");
   }
   const user = await User.findOne({ email });
-  console.log(user)
+  console.log(user);
   if (user && (await bcrypt.compare(password, user.password))) {
-
     const payload = {
       name: user.name,
       email: user.email,
-      id: user.id
-    }
+      id: user.id,
+    };
     const options = {
-      expiresIn: "300m"
-    }
+      expiresIn: "300m",
+    };
 
-    const accessToken = jwt.sign(payload, process.env.SECRET_ACCESS_TOKEN, options)
-    console.log(accessToken)
+    const accessToken = jwt.sign(
+      payload,
+      process.env.SECRET_ACCESS_TOKEN,
+      options
+    );
+    console.log(accessToken);
 
-    res.status(200).cookie("Token", accessToken).json(payload)
+    res
+      .status(200)
+      .cookie("Token", accessToken, {
+        sameSite: "None",
+        secure: true,
+      })
+      .json(payload);
+  } else {
+    res.status(400);
+    throw new Error("Email or Password is wrong");
   }
-  else {
-    res.status(400)
-    throw new Error("Email or Password is wrong")
-  }
-
 };
 
 const registerUser = async (req, res) => {
@@ -71,16 +77,15 @@ const registerUser = async (req, res) => {
 
 const currentUser = async (req, res) => {
   result = {
-    "name": req.user.name,
-    "email": req.user.email,
-  }
+    name: req.user.name,
+    email: req.user.email,
+  };
   // console.log(result)
-  res.status(200).json(result)
-}
+  res.status(200).json(result);
+};
 
 const logoutUser = async (req, res) => {
-  res.cookie("Token", undefined).json(true)
-
-}
+  res.cookie("Token", undefined, { sameSite: "None", secure: true }).json(true);
+};
 
 module.exports = { registerUser, loginUser, currentUser, logoutUser, testApi };
